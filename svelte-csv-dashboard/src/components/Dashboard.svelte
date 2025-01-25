@@ -5,9 +5,17 @@
   export let headers: string[] = [];
   export let rows: Record<string, any>[] = [];
 
-  // State for chart configuration
-  let xAxisColumn: string = headers[0] || ''; // Default to the first header
-  let yAxisColumn: string = headers[1] || ''; // Default to the second header
+  // Chart configuration
+  let xAxisColumn: string = headers[0] || ''; // Default X-axis column
+  let yAxisColumn: string = headers[1] || ''; // Default Y-axis column
+
+  // State for selected rows
+  let selectedRows: Record<string, any>[] = rows;
+
+  // Function to update selected rows from the table
+  function handleSelectedRowsChange(selected: Record<string, any>[]) {
+    selectedRows = selected; // Update selected rows for the chart
+  }
 </script>
 
 <div class="flex flex-col space-y-8">
@@ -43,12 +51,12 @@
   {/if}
 
   <!-- Bar Chart -->
-  {#if rows.length > 0 && xAxisColumn && yAxisColumn}
-    <BarChart rows={rows} xColumn={xAxisColumn} yColumn={yAxisColumn} />
+  {#if selectedRows.length > 0 && xAxisColumn && yAxisColumn}
+    <BarChart rows={selectedRows} xColumn={xAxisColumn} yColumn={yAxisColumn} />
   {:else}
-    <p class="text-gray-600">Upload a CSV file and configure the chart to display data.</p>
+    <p class="text-gray-600">Upload a CSV file, select rows, and configure the chart to display data.</p>
   {/if}
 
   <!-- Data Table -->
-  <Table {headers} {rows} />
+  <Table {headers} {rows} on:selectedRowsChange={handleSelectedRowsChange} />
 </div>

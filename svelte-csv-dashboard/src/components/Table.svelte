@@ -1,153 +1,152 @@
 <script lang="ts">
   import Pagination from './Pagination.svelte';
+  import { createEventDispatcher } from 'svelte';
 
   export let headers: string[] = [];
   export let rows: Record<string, any>[] = [];
 
-  // Sorting state
+  const dispatch = createEventDispatcher();
+
+  // State variables
   let sortColumn: string | null = null;
   let sortOrder: 'asc' | 'desc' | null = null;
-
-  // Pagination state
   let currentPage = 1;
-  let rowsPerPage = 10;
-
-  // Filtering state
-  let selectedFilterColumn: string = headers[0] || ''; // Default to the first column
+  let rowsPerPage = 1000;
+  let selectedFilterColumn: string = headers[0] || '';
   let filterValue: string = '';
+  let selectedRows = new Set<number>();
 
-  // Filtered rows
+  // Reactive declarations
   $: filteredRows = rows.filter((row) => {
     if (!selectedFilterColumn || !filterValue) return true;
-    const cellValue = String(row[selectedFilterColumn]).toLowerCase();
+    const cellValue = row[selectedFilterColumn]?.toString().toLowerCase();
     return cellValue.includes(filterValue.toLowerCase());
   });
 
-  // Calculate total pages after filtering
   $: totalPages = Math.ceil(filteredRows.length / rowsPerPage);
 
-  // Get paginated rows after filtering
   $: paginatedRows = filteredRows.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
 
-  // Function to sort rows
+  // Function to handle table sorting
   function sortTable(column: string) {
     if (sortColumn === column) {
-      // Toggle sort order
       sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
     } else {
-      // Set new column to sort by
       sortColumn = column;
       sortOrder = 'asc';
     }
 
-    // Perform sorting
     rows = [...rows].sort((a, b) => {
       const valueA = a[column];
       const valueB = b[column];
 
-      if (valueA < valueB) return sortOrder === 'asc' ? -1 : 1;
-      if (valueA > valueB) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
+      if (valueA < valueB) {
+        return sortOrder === 'asc' ? -1 : 1;
+      } else if (valueA > valueB) {
+        return sortOrder === 'asc' ? 1 : -1;
+      } else {
+        return 0;
+      }
     });
 
-    // Reset to the first page after sorting
     currentPage = 1;
   }
 
-  // Handle page change
+  // Function to handle pagination
   function handlePageChange(page: number) {
     currentPage = page;
   }
+
+  // Function to handle row selection
+  function toggleRowSelection(index: number) {
+    if (selectedRows.has(index)) {
+      selectedRows.delete(index);
+    } else {
+      selectedRows.add(index);
+    }
+
+    dispatch(
+      'selectionChange',
+      Array.from(selectedRows).map((i) => filteredRows[i])
+    );
+  }
 </script>
 
-<!-- Dropdown for selecting a filter column -->
-<div class="flex items-center space-x-4 mb-4">
-  <div>
-    <label for="filterColumn" class="block text-sm font-medium text-gray-700">Filter by:</label>
-    <select
-      id="filterColumn"
-      class="px-3 py-2 border rounded"
-      bind:value={selectedFilterColumn}
-    >
-      {#each headers as header}
-        <option value={header}>{header}</option>
-      {/each}
-    </select>
-  </div>
-
-  <!-- Input for entering the filter value -->
-  <div>
-    <label for="filterValue" class="block text-sm font-medium text-gray-700">Value:</label>
-    <input
-      id="filterValue"
-      type="text"
-      placeholder="Enter filter value"
-      class="px-3 py-2 border rounded"
-      bind:value={filterValue}
-    />
-  </div>
-</div>
-
-<!-- Table -->
-<div class="overflow-x-auto">
-  <table class="table-auto border-collapse border border-gray-300 w-full">
-    <thead class="bg-gray-100">
-      <tr>
+<div class="table-container">
+  <!-- Filter Section -->
+  <div class="flex items-center space-x-4 mb-4">
+    <div>
+      <label for="filterColumn" class="label">Filter by:</label>
+      <select id="filterColumn" class="dropdown" bind:value={selectedFilterColumn}>
         {#each headers as header}
-          <th
-            class="border border-gray-300 px-4 py-2 text-left cursor-pointer hover:bg-gray-200"
-            on:click={() => sortTable(header)}
-          >
+          <option value={header}>{header}</option>
+        {/each}
+      </select>
+    </div>
+    <div>
+      <label for="filterValue" class="label">Value:</label>
+      <input
+        id="filterValue"
+        type="text"
+        placeholder="Enter filter value"
+        class="input"
+        bind:value={filterValue}
+      />
+    </div>
+  </div>
+
+  <!-- Table Section -->
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Select</th>
+        {#each headers as header}
+          <th on:click={() => sortTable(header)}>
             {header}
-            <!-- Show sort icon -->
             {#if sortColumn === header}
-              <span class="ml-2 text-sm">
-                {sortOrder === 'asc' ? '▲' : '▼'}
-              </span>
+              <span>{sortOrder === 'asc' ? '▲' : '▼'}</span>
             {/if}
           </th>
         {/each}
       </tr>
     </thead>
     <tbody>
-      {#each paginatedRows as row}
-        <tr class="hover:bg-gray-50">
+      {#each paginatedRows as row, index}
+        <tr>
+          <td>
+            <input
+              type="checkbox"
+              on:change={() => toggleRowSelection((currentPage - 1) * rowsPerPage + index)}
+            />
+          </td>
           {#each headers as header}
-            <td class="border border-gray-300 px-4 py-2">{row[header]}</td>
+            <td>{row[header]}</td>
           {/each}
         </tr>
       {/each}
     </tbody>
   </table>
-</div>
 
-<!-- Rows Per Page Selection -->
-<div class="flex items-center justify-between mt-4">
-  <div>
-    <label for="rowsPerPage" class="mr-2 text-sm font-medium text-gray-700">Rows per page:</label>
-    <select
-      id="rowsPerPage"
-      class="px-2 py-1 border rounded"
-      on:change={(e) => {
-        rowsPerPage = parseInt(e.target.value);
-        currentPage = 1; // Reset to the first page
-      }}
-    >
-      <option value="10" selected>10</option>
-      <option value="20">20</option>
-      <option value="50">50</option>
-    </select>
+  <!-- Pagination Section -->
+  <div class="pagination-container mt-4">
+    <div class="rows-per-page-container">
+      <span>Rows per page:</span>
+      <select
+        class="rows-per-page-select"
+        on:change={(e) => {
+          const value = e.target.value;
+          rowsPerPage = value === 'full' ? filteredRows.length : parseInt(value);
+          currentPage = 1;
+        }}
+      >
+        <option value="1000" selected>1000</option>
+        <option value="2000">2000</option>
+        <option value="full">Full</option>
+      </select>
+    </div>
+    <Pagination {totalPages} {currentPage} onPageChange={handlePageChange} />
   </div>
-</div>
-
-<!-- Pagination Component -->
-<div class="mt-4">
-  <Pagination
-    {totalPages}
-    {currentPage}
-    onPageChange={handlePageChange}
-  />
 </div>

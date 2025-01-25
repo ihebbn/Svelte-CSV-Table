@@ -51,9 +51,7 @@
 
   // Re-render chart when inputs change
   afterUpdate(() => {
-    if (chartInstance) {
-      renderChart();
-    }
+    renderChart();
   });
 
   onMount(() => {

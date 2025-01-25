@@ -5,29 +5,55 @@
 
   function goToPage(page: number) {
     if (page >= 1 && page <= totalPages) {
-      onPageChange(page);
+      onPageChange(page); // Call the parent function
     }
   }
+
+  $: visiblePages = (() => {
+    const range = [];
+    const min = Math.max(1, currentPage - 1);
+    const max = Math.min(totalPages, currentPage + 1);
+
+    if (min > 1) range.push(1, '...');
+    for (let i = min; i <= max; i++) range.push(i);
+    if (max < totalPages) range.push('...', totalPages);
+
+    return range;
+  })();
 </script>
 
-<div class="flex items-center justify-between mt-4">
+<div class="pagination-container">
+  <!-- Previous Button -->
   <button
-    class="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+    class="pagination-arrow"
     on:click={() => goToPage(currentPage - 1)}
     disabled={currentPage === 1}
   >
-    Previous
+    &lsaquo;
   </button>
 
-  <div class="text-sm">
-    Page {currentPage} of {totalPages}
+  <!-- Page Numbers -->
+  <div class="pagination-pages">
+    {#each visiblePages as page}
+      {#if page === '...'}
+        <span class="pagination-dots">...</span>
+      {:else}
+        <button
+          class="pagination-number {currentPage === page ? 'pagination-current' : ''}"
+          on:click={() => goToPage(page)}
+        >
+          {page}
+        </button>
+      {/if}
+    {/each}
   </div>
 
+  <!-- Next Button -->
   <button
-    class="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+    class="pagination-arrow"
     on:click={() => goToPage(currentPage + 1)}
     disabled={currentPage === totalPages}
   >
-    Next
+    &rsaquo;
   </button>
 </div>
