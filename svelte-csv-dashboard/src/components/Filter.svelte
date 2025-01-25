@@ -3,22 +3,22 @@
   export let filters: Record<string, string> = {};
   export let onFilterChange: (filters: Record<string, string>) => void;
 
-  function updateFilter(header: string, value: string) {
-    const updatedFilters = { ...filters, [header]: value };
-    onFilterChange(updatedFilters);
+  function handleInputChange(header: string, value: string) {
+    filters[header] = value;
+    onFilterChange({ ...filters });
   }
 </script>
 
-<div class="grid gap-4 mb-4">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
   {#each headers as header}
     <div>
-      <label for="{header}" class="block text-sm font-medium text-gray-700">{header} Filter:</label>
+      <label class="block text-sm font-medium text-gray-700">{header}</label>
       <input
-        id="{header}"
         type="text"
-        class="mt-1 px-2 py-1 border rounded w-full"
-        placeholder={`Filter by ${header}`}
-        on:input={(e) => updateFilter(header, e.target.value)}
+        placeholder="Filter"
+        value={filters[header] || ''}
+        class="block w-full px-3 py-2 border rounded"
+        on:input={(e) => handleInputChange(header, e.target.value)}
       />
     </div>
   {/each}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Pagination from './Pagination.svelte'; // Ensure the correct path to your Pagination component
+  import Pagination from './Pagination.svelte';
 
   export let headers: string[] = [];
   export let rows: Record<string, any>[] = [];
@@ -12,11 +12,25 @@
   let currentPage = 1;
   let rowsPerPage = 10;
 
-  // Calculate total pages
-  $: totalPages = Math.ceil(rows.length / rowsPerPage);
+  // Filtering state
+  let selectedFilterColumn: string = headers[0] || ''; // Default to the first column
+  let filterValue: string = '';
 
-  // Get paginated rows
-  $: paginatedRows = rows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  // Filtered rows
+  $: filteredRows = rows.filter((row) => {
+    if (!selectedFilterColumn || !filterValue) return true;
+    const cellValue = String(row[selectedFilterColumn]).toLowerCase();
+    return cellValue.includes(filterValue.toLowerCase());
+  });
+
+  // Calculate total pages after filtering
+  $: totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+
+  // Get paginated rows after filtering
+  $: paginatedRows = filteredRows.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
 
   // Function to sort rows
   function sortTable(column: string) {
@@ -49,6 +63,35 @@
   }
 </script>
 
+<!-- Dropdown for selecting a filter column -->
+<div class="flex items-center space-x-4 mb-4">
+  <div>
+    <label for="filterColumn" class="block text-sm font-medium text-gray-700">Filter by:</label>
+    <select
+      id="filterColumn"
+      class="px-3 py-2 border rounded"
+      bind:value={selectedFilterColumn}
+    >
+      {#each headers as header}
+        <option value={header}>{header}</option>
+      {/each}
+    </select>
+  </div>
+
+  <!-- Input for entering the filter value -->
+  <div>
+    <label for="filterValue" class="block text-sm font-medium text-gray-700">Value:</label>
+    <input
+      id="filterValue"
+      type="text"
+      placeholder="Enter filter value"
+      class="px-3 py-2 border rounded"
+      bind:value={filterValue}
+    />
+  </div>
+</div>
+
+<!-- Table -->
 <div class="overflow-x-auto">
   <table class="table-auto border-collapse border border-gray-300 w-full">
     <thead class="bg-gray-100">

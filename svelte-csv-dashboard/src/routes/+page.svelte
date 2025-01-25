@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Table from '../components/Table.svelte';
+  import Dashboard from '../components/Dashboard.svelte';
   import Papa from 'papaparse';
 
   let headers: string[] = [];
@@ -21,7 +21,7 @@
 </script>
 
 <div class="p-4">
-  <h1 class="text-2xl font-bold mb-4">Dynamic CSV Table</h1>
+  <h1 class="text-2xl font-bold mb-4">Dynamic CSV Dashboard</h1>
   
   <!-- File Upload -->
   <div class="mb-4">
@@ -35,10 +35,10 @@
     />
   </div>
 
-  <!-- Render Table -->
+  <!-- Render Dashboard -->
   {#if headers.length > 0 && rows.length > 0}
-    <Table {headers} {rows} />
+    <Dashboard {headers} {rows} />
   {:else}
-    <p class="text-gray-600">Upload a CSV file to see the table.</p>
+    <p class="text-gray-600">Upload a CSV file to visualize the data.</p>
   {/if}
 </div>
