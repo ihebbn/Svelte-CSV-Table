@@ -4,8 +4,7 @@
   export let onFilterChange: (filters: Record<string, string>) => void;
 
   function handleInputChange(header: string, value: string) {
-    filters[header] = value;
-    onFilterChange({ ...filters });
+    onFilterChange({ ...filters, [header]: value }); // ✅ Correctly updates state
   }
 </script>
 
