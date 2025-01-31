@@ -8,6 +8,10 @@
   async function handleFileUpload(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
+      // ✅ Clear rows first to trigger reactivity
+      rows = [];
+      headers = [];
+
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
@@ -17,8 +21,9 @@
             return;
           }
 
-          headers = Object.keys(results.data[0]).filter(h => h.trim() !== ""); // Filter empty headers
-          rows = results.data.filter(row => Object.values(row).some(v => v !== "")); // Remove empty rows
+          // ✅ Reassign headers and rows properly
+          headers = [...Object.keys(results.data[0]).filter(h => h.trim() !== "")];
+          rows = [...results.data.filter(row => Object.values(row).some(v => v !== ""))];
         },
       });
     }
@@ -27,7 +32,7 @@
 
 <div class="p-4">
   <h1 class="text-2xl font-bold mb-4">Dynamic CSV Dashboard</h1>
-  
+
   <!-- File Upload -->
   <div class="mb-4">
     <label class="block text-gray-700 font-bold mb-2" for="csvFile">Upload CSV File:</label>
