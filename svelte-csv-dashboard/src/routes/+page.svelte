@@ -12,8 +12,13 @@
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          headers = Object.keys(results.data[0]); // Get column names
-          rows = results.data; // Get rows
+          if (results.data.length === 0) {
+            alert("Invalid CSV: No data found.");
+            return;
+          }
+
+          headers = Object.keys(results.data[0]).filter(h => h.trim() !== ""); // Filter empty headers
+          rows = results.data.filter(row => Object.values(row).some(v => v !== "")); // Remove empty rows
         },
       });
     }
