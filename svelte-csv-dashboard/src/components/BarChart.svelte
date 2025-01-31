@@ -61,10 +61,14 @@
       chartInstance = null;
     }
 
-    chartInstance = echarts.init(chartElement);
+    chartInstance = echarts.init(chartElement, null, { 
+      width: chartElement.clientWidth, 
+      height: chartElement.clientHeight 
+    });
 
     const options = {
       tooltip: { trigger: 'axis' },
+      grid: { left: '5%', right: '5%', bottom: '20%', containLabel: true }, // ✅ Ensure labels fit
       xAxis: { 
         type: 'category', 
         data: xData, 
@@ -73,10 +77,10 @@
       },
       yAxis: { type: 'value', name: `${aggregation} of ${yColumn}` },
       dataZoom: [
-        { type: 'slider', start: 0, end: 10, throttle: 50 }, // ✅ Faster zooming with lower throttle
+        { type: 'slider', start: 0, end: 10, throttle: 50 }, 
         { type: 'inside', throttle: 50 }
       ],
-      progressive: 5000, // ✅ Improve large dataset performance
+      progressive: 5000, 
       series: [{
         type: 'bar',
         data: yData,
@@ -91,14 +95,12 @@
     };
 
     chartInstance.setOption(options);
+  }
 
-    // ✅ Prevent unnecessary re-renders while zooming
-    chartInstance.on('dataZoom', () => {
-      zooming = true;
-      setTimeout(() => {
-        zooming = false;
-      }, 100);
-    });
+  function resizeChart() {
+    if (chartInstance) {
+      chartInstance.resize();
+    }
   }
 
   afterUpdate(() => {
@@ -111,6 +113,7 @@
 
   onMount(() => {
     renderChart();
+    window.addEventListener('resize', resizeChart); // ✅ Listen for window resize
   });
 
   onDestroy(() => {
@@ -118,7 +121,9 @@
       chartInstance.dispose();
       chartInstance = null;
     }
+    window.removeEventListener('resize', resizeChart);
   });
 </script>
 
-<div bind:this={chartElement} class="w-full h-96 border border-gray-300"></div>
+<!-- ✅ Make the chart container responsive -->
+<div bind:this={chartElement} class="w-full h-[400px] sm:h-[500px] md:h-[600px] border border-gray-300"></div>
