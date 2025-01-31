@@ -12,37 +12,42 @@
   let sortOrder: 'asc' | 'desc' | null = null;
   let currentPage = 1;
   let rowsPerPage = 1000;
-  let selectedFilterColumn: string = headers[0] || '';
-  let filterValue: string = '';
   let selectedRows = new Set<number>();
-  let totalPages = 1; // ✅ Initialize before reactivity
+  let totalPages = 1;
+
+  // Sorting function
+  function sortTable(column: string) {
+    if (sortColumn === column) {
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortColumn = column;
+      sortOrder = 'asc';
+    }
+  }
 
   // Reactive declarations
-  $: filteredRows = rows.filter((row) => {
-    if (!selectedFilterColumn || !filterValue) return true;
-    const cellValue = row[selectedFilterColumn]?.toString().toLowerCase();
-    return cellValue.includes(filterValue.toLowerCase());
+  $: sortedRows = [...rows].sort((a, b) => {
+    if (!sortColumn) return 0;
+    let valA = a[sortColumn];
+    let valB = b[sortColumn];
+
+    if (typeof valA === 'string') valA = valA.toLowerCase();
+    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
-  $: totalPages = filteredRows.length > 0 ? Math.ceil(filteredRows.length / rowsPerPage) : 1;
+  $: totalPages = sortedRows.length > 0 ? Math.ceil(sortedRows.length / rowsPerPage) : 1;
+  $: paginatedRows = sortedRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
-  $: paginatedRows = filteredRows.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-
-  // Function to handle pagination
   function handlePageChange(page: number) {
     currentPage = page;
   }
 
-  // Function to update rows per page
   function updateRowsPerPage(value: string) {
-    if (value === 'full') {
-      rowsPerPage = 1000; // ✅ Lazy loading instead of full
-    } else {
-      rowsPerPage = parseInt(value);
-    }
+    rowsPerPage = value === 'full' ? sortedRows.length : parseInt(value);
     currentPage = 1;
   }
 </script>
@@ -53,7 +58,12 @@
     <thead>
       <tr>
         {#each headers as header}
-          <th>{header}</th>
+          <th on:click={() => sortTable(header)} class="cursor-pointer">
+            {header}
+            {#if sortColumn === header}
+              {sortOrder === 'asc' ? ' ▲' : ' ▼'}
+            {/if}
+          </th>
         {/each}
       </tr>
     </thead>
@@ -72,10 +82,7 @@
   <div class="pagination-container mt-4">
     <div class="rows-per-page-container">
       <span>Rows per page:</span>
-      <select
-        class="rows-per-page-select"
-        on:change={(e) => updateRowsPerPage(e.target.value)}
-      >
+      <select class="rows-per-page-select" on:change={(e) => updateRowsPerPage(e.target.value)}>
         <option value="1000" selected>1000</option>
         <option value="2000">2000</option>
         <option value="full">Full</option>
@@ -84,3 +91,9 @@
     <Pagination {totalPages} {currentPage} onPageChange={handlePageChange} />
   </div>
 </div>
+
+<style>
+  .cursor-pointer {
+    cursor: pointer;
+  }
+</style>
