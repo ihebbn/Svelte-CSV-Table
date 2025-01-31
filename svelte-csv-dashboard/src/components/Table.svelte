@@ -1,5 +1,6 @@
 <script lang="ts">
   import Pagination from './Pagination.svelte';
+  import Filter from './Filter.svelte';
   import { createEventDispatcher } from 'svelte';
 
   export let headers: string[] = [];
@@ -12,8 +13,17 @@
   let sortOrder: 'asc' | 'desc' | null = null;
   let currentPage = 1;
   let rowsPerPage = 1000;
-  let selectedRows = new Set<number>();
   let totalPages = 1;
+
+  // Filtering state
+  let filterColumn: string = headers[0] || '';
+  let filterValue: string = '';
+
+  // Handle filter changes from Filter.svelte
+  function handleFilterChange(event: CustomEvent) {
+    filterColumn = event.detail.column;
+    filterValue = event.detail.value;
+  }
 
   // Sorting function
   function sortTable(column: string) {
@@ -26,7 +36,13 @@
   }
 
   // Reactive declarations
-  $: sortedRows = [...rows].sort((a, b) => {
+  $: filteredRows = rows.filter((row) => {
+    if (!filterColumn || !filterValue) return true;
+    const cellValue = row[filterColumn]?.toString().toLowerCase();
+    return cellValue.includes(filterValue.toLowerCase());
+  });
+
+  $: sortedRows = [...filteredRows].sort((a, b) => {
     if (!sortColumn) return 0;
     let valA = a[sortColumn];
     let valB = b[sortColumn];
@@ -51,6 +67,9 @@
     currentPage = 1;
   }
 </script>
+
+<!-- Filter Component -->
+<Filter {headers} on:filterChange={handleFilterChange} />
 
 <div class="table-container">
   <!-- Table Section -->
