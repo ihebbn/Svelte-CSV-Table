@@ -1,88 +1,105 @@
 <script lang="ts">
   import Pagination from './Pagination.svelte';
   import Filter from './Filter.svelte';
-  import { createEventDispatcher } from 'svelte';
+  import { csvHeaders, csvRows } from '../stores/dataStore';
+  import { get } from 'svelte/store';
 
-  export let headers: string[] = [];
-  export let rows: Record<string, any>[] = [];
+  let headers = get(csvHeaders);
+  let rows = get(csvRows);
 
-  const dispatch = createEventDispatcher();
+  $: headers = get(csvHeaders);
+  $: rows = get(csvRows);
 
-  // State variables
   let sortColumn: string | null = null;
   let sortOrder: 'asc' | 'desc' | null = null;
   let currentPage = 1;
   let rowsPerPage = 1000;
   let totalPages = 1;
+  let paginatedRows = [];
 
-  // Filtering state
-  let filterColumn: string = headers[0] || '';
-  let filterValue: string = '';
+  let worker: Worker | null = null;
 
-  // Handle filter changes from Filter.svelte
+  onMount(() => {
+    worker = new Worker(new URL('../utils/sortWorker.ts', import.meta.url), { type: 'module' });
+
+    worker.onmessage = (event) => {
+      csvRows.set(event.data);
+    };
+  });
+
+  function sortTable(column: string) {
+    sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    sortColumn = column;
+
+    if (worker) {
+      worker.postMessage({ rows: get(csvRows), column, order: sortOrder });
+    }
+  }
+
+  // Filtering logic
+  let filterColumn = headers[0] || '';
+  let filterValue = '';
+
   function handleFilterChange(event: CustomEvent) {
     filterColumn = event.detail.column;
     filterValue = event.detail.value;
   }
 
-  // Sorting function
-  function sortTable(column: string) {
-    if (sortColumn === column) {
-      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    } else {
-      sortColumn = column;
-      sortOrder = 'asc';
-    }
+  // Column visibility toggle
+  let showDropdown = false;
+  let selectedColumns = new Set(headers);
+
+  function toggleColumn(header: string) {
+    selectedColumns.has(header) ? selectedColumns.delete(header) : selectedColumns.add(header);
+    selectedColumns = new Set(selectedColumns);
   }
 
-  // Reactive declarations
-  $: filteredRows = rows.filter((row) => {
-    if (!filterColumn || !filterValue) return true;
-    const cellValue = row[filterColumn]?.toString().toLowerCase();
-    return cellValue.includes(filterValue.toLowerCase());
-  });
-
-  $: sortedRows = [...filteredRows].sort((a, b) => {
-    if (!sortColumn) return 0;
-    let valA = a[sortColumn];
-    let valB = b[sortColumn];
-
-    if (typeof valA === 'string') valA = valA.toLowerCase();
-    if (typeof valB === 'string') valB = valB.toLowerCase();
-
-    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  $: totalPages = sortedRows.length > 0 ? Math.ceil(sortedRows.length / rowsPerPage) : 1;
-  $: paginatedRows = sortedRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  // Pagination
+  $: totalPages = Math.ceil(get(csvRows).length / rowsPerPage);
+  $: paginatedRows = get(csvRows).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   function handlePageChange(page: number) {
     currentPage = page;
   }
 
   function updateRowsPerPage(value: string) {
-    rowsPerPage = value === 'full' ? sortedRows.length : parseInt(value);
+    rowsPerPage = value === 'full' ? get(csvRows).length : parseInt(value);
     currentPage = 1;
   }
 </script>
 
+<!-- Column Visibility Dropdown -->
+<div class="relative mb-4">
+  <button on:click={() => showDropdown = !showDropdown} class="styled-toggle-btn">
+    Select Columns ▼
+  </button>
+
+  {#if showDropdown}
+    <div class="checklist-dropdown">
+      {#each headers as header}
+        <label class="checklist-item">
+          <input type="checkbox" class="hidden-checkbox" checked={selectedColumns.has(header)} on:change={() => toggleColumn(header)} />
+          <span class="checklist-label">{header}</span>
+        </label>
+      {/each}
+    </div>
+  {/if}
+</div>
+
 <!-- Filter Component -->
 <Filter {headers} on:filterChange={handleFilterChange} />
 
+<!-- Table Section -->
 <div class="table-container">
-  <!-- Table Section -->
   <table class="table">
     <thead>
       <tr>
         {#each headers as header}
-          <th on:click={() => sortTable(header)} class="cursor-pointer">
-            {header}
-            {#if sortColumn === header}
-              {sortOrder === 'asc' ? ' ▲' : ' ▼'}
-            {/if}
-          </th>
+          {#if selectedColumns.has(header)}
+            <th on:click={() => sortTable(header)} class="cursor-pointer">
+              {header} {#if sortColumn === header} {sortOrder === 'asc' ? ' ▲' : ' ▼'} {/if}
+            </th>
+          {/if}
         {/each}
       </tr>
     </thead>
@@ -90,7 +107,9 @@
       {#each paginatedRows as row}
         <tr>
           {#each headers as header}
-            <td>{row[header]}</td>
+            {#if selectedColumns.has(header)}
+              <td>{row[header]}</td>
+            {/if}
           {/each}
         </tr>
       {/each}
@@ -110,9 +129,3 @@
     <Pagination {totalPages} {currentPage} onPageChange={handlePageChange} />
   </div>
 </div>
-
-<style>
-  .cursor-pointer {
-    cursor: pointer;
-  }
-</style>

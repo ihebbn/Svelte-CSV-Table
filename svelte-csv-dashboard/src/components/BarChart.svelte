@@ -87,8 +87,9 @@
         name: `${aggregation} of ${yColumn}`,
         itemStyle: { 
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#007BFF' },
-            { offset: 1, color: '#00C9FF' }
+            { offset: 0, color: '#FFD479' }, // Light Yellow (Top)
+            { offset: 0.5, color: '#FF8C42' }, // Orange (Middle)
+            
           ])
         }
       }]
