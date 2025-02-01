@@ -39,14 +39,29 @@
     }
   }
 
-  // Toggle column visibility
+  // Toggle column visibility with smooth animation
   function toggleColumn(header: string) {
-    if (selectedColumns.has(header)) {
-      selectedColumns.delete(header);
-    } else {
-      selectedColumns.add(header);
-    }
-    selectedColumns = new Set(selectedColumns); // Force reactivity update
+    const columnElements = document.querySelectorAll(`.${header.replace(/\s+/g, '-')}`);
+
+    columnElements.forEach((col: HTMLElement) => {
+      col.style.transition = "opacity 0.3s ease, width 0.3s ease";
+      col.style.opacity = "0";
+      col.style.width = "0";
+    });
+
+    setTimeout(() => {
+      if (selectedColumns.has(header)) {
+        selectedColumns.delete(header);
+      } else {
+        selectedColumns.add(header);
+      }
+      selectedColumns = new Set(selectedColumns); // Force reactivity update
+
+      columnElements.forEach((col: HTMLElement) => {
+        col.style.opacity = "1";
+        col.style.width = "auto";
+      });
+    }, 300);
   }
 
   // Reactive filtered rows
@@ -84,7 +99,7 @@
 
 <!-- Column Visibility Dropdown -->
 <div class="relative mb-4">
-  <button on:click={() => showDropdown = !showDropdown} class="toggle-btn">
+  <button on:click={() => showDropdown = !showDropdown} class="styled-toggle-btn">
     Select Columns ▼
   </button>
 
@@ -110,7 +125,7 @@
       <tr>
         {#each headers as header}
           {#if selectedColumns.has(header)}
-            <th on:click={() => sortTable(header)} class="cursor-pointer">
+            <th on:click={() => sortTable(header)} class="cursor-pointer {header.replace(/\s+/g, '-')}">
               {header}
               {#if sortColumn === header}
                 {sortOrder === 'asc' ? ' ▲' : ' ▼'}
@@ -125,7 +140,7 @@
         <tr>
           {#each headers as header}
             {#if selectedColumns.has(header)}
-              <td>{row[header]}</td>
+              <td class="{header.replace(/\s+/g, '-')}">{row[header]}</td>
             {/if}
           {/each}
         </tr>
