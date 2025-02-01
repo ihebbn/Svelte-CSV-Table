@@ -9,7 +9,7 @@
 
   let chartElement: HTMLDivElement;
   let chartInstance: echarts.ECharts | null = null;
-  let zooming = false; // ✅ Prevent excessive re-renders during zoom
+  let zooming = false; // Prevent excessive re-renders during zoom
 
   function aggregateData() {
     if (!xColumn || !yColumn) return { xData: [], yData: [] };
@@ -68,7 +68,7 @@
 
     const options = {
       tooltip: { trigger: 'axis' },
-      grid: { left: '5%', right: '5%', bottom: '20%', containLabel: true }, // ✅ Ensure labels fit
+      grid: { left: '5%', right: '5%', bottom: '20%', containLabel: true }, // Ensure labels fit
       xAxis: { 
         type: 'category', 
         data: xData, 
@@ -114,7 +114,7 @@
 
   onMount(() => {
     renderChart();
-    window.addEventListener('resize', resizeChart); // ✅ Listen for window resize
+    window.addEventListener('resize', resizeChart); // Listen for window resize
   });
 
   onDestroy(() => {
@@ -126,5 +126,5 @@
   });
 </script>
 
-<!-- ✅ Make the chart container responsive -->
+<!--  Make the chart container responsive -->
 <div bind:this={chartElement} class="w-full h-[400px] sm:h-[500px] md:h-[600px] border border-gray-300"></div>

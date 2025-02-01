@@ -16,10 +16,10 @@
   }
 </script>
 
-<!-- ✅ Improved Layout -->
+<!-- Improved Layout -->
 <div class="flex flex-col space-y-6 px-2 sm:px-4">
 
-  <!-- ✅ Responsive Filter Controls -->
+  <!-- Responsive Filter Controls -->
   {#if headers.length > 0}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       
@@ -69,14 +69,14 @@
     </div>
   {/if}
 
-  <!-- ✅ Responsive Chart Section -->
+  <!-- Responsive Chart Section -->
   <BarChart 
     {rows} 
     xColumn={xAxisColumn} 
     yColumn={yAxisColumn} 
     aggregation={aggregationMethod} />
 
-  <!-- ✅ Responsive Table Section -->
+  <!-- Responsive Table Section -->
   <Table {headers} rows={selectedRows} on:selectedRowsChange={handleSelectedRowsChange} />
 
 </div>
