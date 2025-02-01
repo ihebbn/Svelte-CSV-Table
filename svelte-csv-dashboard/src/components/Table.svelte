@@ -1,76 +1,90 @@
 <script lang="ts">
   import Pagination from './Pagination.svelte';
   import Filter from './Filter.svelte';
-  import { csvHeaders, csvRows } from '../stores/dataStore';
-  import { get } from 'svelte/store';
+  import { createEventDispatcher } from 'svelte';
 
-  let headers = get(csvHeaders);
-  let rows = get(csvRows);
+  export let headers: string[] = [];
+  export let rows: Record<string, any>[] = [];
 
-  $: headers = get(csvHeaders);
-  $: rows = get(csvRows);
+  const dispatch = createEventDispatcher();
 
+  // State variables
   let sortColumn: string | null = null;
   let sortOrder: 'asc' | 'desc' | null = null;
   let currentPage = 1;
   let rowsPerPage = 1000;
   let totalPages = 1;
-  let paginatedRows = [];
+  let showDropdown = false; // Dropdown visibility state
 
-  let worker: Worker | null = null;
+  // Filtering state
+  let filterColumn: string = headers[0] || '';
+  let filterValue: string = '';
 
-  onMount(() => {
-    worker = new Worker(new URL('../utils/sortWorker.ts', import.meta.url), { type: 'module' });
+  // Column Visibility State
+  let selectedColumns = new Set(headers); // Default: Show all columns
 
-    worker.onmessage = (event) => {
-      csvRows.set(event.data);
-    };
-  });
-
-  function sortTable(column: string) {
-    sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    sortColumn = column;
-
-    if (worker) {
-      worker.postMessage({ rows: get(csvRows), column, order: sortOrder });
-    }
-  }
-
-  // Filtering logic
-  let filterColumn = headers[0] || '';
-  let filterValue = '';
-
+  // Handle filter changes
   function handleFilterChange(event: CustomEvent) {
     filterColumn = event.detail.column;
     filterValue = event.detail.value;
   }
 
-  // Column visibility toggle
-  let showDropdown = false;
-  let selectedColumns = new Set(headers);
-
-  function toggleColumn(header: string) {
-    selectedColumns.has(header) ? selectedColumns.delete(header) : selectedColumns.add(header);
-    selectedColumns = new Set(selectedColumns);
+  // Sorting function
+  function sortTable(column: string) {
+    if (sortColumn === column) {
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortColumn = column;
+      sortOrder = 'asc';
+    }
   }
 
-  // Pagination
-  $: totalPages = Math.ceil(get(csvRows).length / rowsPerPage);
-  $: paginatedRows = get(csvRows).slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+  // Toggle column visibility
+  function toggleColumn(header: string) {
+    if (selectedColumns.has(header)) {
+      selectedColumns.delete(header);
+    } else {
+      selectedColumns.add(header);
+    }
+    selectedColumns = new Set(selectedColumns); // Force reactivity update
+  }
+
+  // Reactive filtered rows
+  $: filteredRows = rows.filter((row) => {
+    if (!filterColumn || !filterValue) return true;
+    const cellValue = row[filterColumn]?.toString().toLowerCase();
+    return cellValue.includes(filterValue.toLowerCase());
+  });
+
+  // Reactive sorted rows
+  $: sortedRows = [...filteredRows].sort((a, b) => {
+    if (!sortColumn) return 0;
+    let valA = a[sortColumn];
+    let valB = b[sortColumn];
+
+    if (typeof valA === 'string') valA = valA.toLowerCase();
+    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+    return sortOrder === 'asc' ? (valA < valB ? -1 : 1) : (valA > valB ? -1 : 1);
+  });
+
+  // Pagination logic
+  $: totalPages = sortedRows.length > 0 ? Math.ceil(sortedRows.length / rowsPerPage) : 1;
+  $: paginatedRows = sortedRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   function handlePageChange(page: number) {
     currentPage = page;
   }
 
   function updateRowsPerPage(value: string) {
-    rowsPerPage = value === 'full' ? get(csvRows).length : parseInt(value);
+    rowsPerPage = value === 'full' ? sortedRows.length : parseInt(value);
     currentPage = 1;
   }
 </script>
 
 <!-- Column Visibility Dropdown -->
 <div class="relative mb-4">
-  <button on:click={() => showDropdown = !showDropdown} class="styled-toggle-btn">
+  <button on:click={() => showDropdown = !showDropdown} class="toggle-btn">
     Select Columns ▼
   </button>
 
@@ -97,7 +111,10 @@
         {#each headers as header}
           {#if selectedColumns.has(header)}
             <th on:click={() => sortTable(header)} class="cursor-pointer">
-              {header} {#if sortColumn === header} {sortOrder === 'asc' ? ' ▲' : ' ▼'} {/if}
+              {header}
+              {#if sortColumn === header}
+                {sortOrder === 'asc' ? ' ▲' : ' ▼'}
+              {/if}
             </th>
           {/if}
         {/each}
