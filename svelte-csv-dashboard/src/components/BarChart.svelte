@@ -1,61 +1,120 @@
 <script lang="ts">
   import * as echarts from 'echarts';
-  import { onMount, afterUpdate, onDestroy } from 'svelte';
+  import { onMount, onDestroy, afterUpdate } from 'svelte';
 
   export let rows: Record<string, any>[] = [];
   export let xColumn: string = '';
   export let yColumn: string = '';
+  export let aggregation: string = 'sum';
 
   let chartElement: HTMLDivElement;
   let chartInstance: echarts.ECharts | null = null;
+  let zooming = false; // Prevent excessive re-renders during zoom
+
+  function aggregateData() {
+    if (!xColumn || !yColumn) return { xData: [], yData: [] };
+
+    let groupedData: Record<string, number[]> = {};
+
+    rows.forEach((row) => {
+      let xValue = row[xColumn];
+      let yValue = parseFloat(row[yColumn]);
+
+      if (!groupedData[xValue]) groupedData[xValue] = [];
+      if (!isNaN(yValue)) groupedData[xValue].push(yValue);
+    });
+
+    let xData: string[] = Object.keys(groupedData);
+    let yData: number[] = [];
+
+    xData.forEach((key) => {
+      let values = groupedData[key];
+
+      switch (aggregation) {
+        case 'sum':
+          yData.push(values.reduce((a, b) => a + b, 0));
+          break;
+        case 'average':
+          yData.push(values.reduce((a, b) => a + b, 0) / values.length);
+          break;
+        case 'count':
+          yData.push(values.length);
+          break;
+        case 'countDistinct':
+          yData.push(new Set(values).size);
+          break;
+      }
+    });
+
+    return { xData, yData };
+  }
 
   function renderChart() {
-    if (!chartElement) {
-      console.error('Chart element not found.');
-      return;
-    }
-    if (!xColumn || !yColumn) {
-      console.error('X or Y axis not selected.');
-      return;
+    if (!chartElement || !xColumn || !yColumn) return;
+
+    let { xData, yData } = aggregateData();
+
+    if (!xData.length || !yData.length) return;
+
+    if (chartInstance) {
+      chartInstance.dispose();
+      chartInstance = null;
     }
 
-    const xData = rows.map((row) => row[xColumn]);
-    const yData = rows.map((row) => parseFloat(row[yColumn]) || 0);
-
-    // Check if data is valid
-    if (!xData.length || !yData.length) {
-      console.error('Invalid data for chart rendering.');
-      return;
-    }
-
-    if (!chartInstance) {
-      chartInstance = echarts.init(chartElement);
-    }
+    chartInstance = echarts.init(chartElement, null, { 
+      width: chartElement.clientWidth, 
+      height: chartElement.clientHeight 
+    });
 
     const options = {
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: xData, name: xColumn },
-      yAxis: { type: 'value', name: yColumn },
-      series: [
-        {
-          type: 'bar',
-          data: yData,
-          name: yColumn,
-          itemStyle: { color: '#007BFF' },
-        },
+      grid: { left: '5%', right: '5%', bottom: '20%', containLabel: true }, // Ensure labels fit
+      xAxis: { 
+        type: 'category', 
+        data: xData, 
+        name: xColumn,
+        axisLabel: { rotate: 45, interval: xData.length > 50 ? Math.floor(xData.length / 50) : 0 }
+      },
+      yAxis: { type: 'value', name: `${aggregation} of ${yColumn}` },
+      dataZoom: [
+        { type: 'slider', start: 0, end: 10, throttle: 50 }, 
+        { type: 'inside', throttle: 50 }
       ],
+      progressive: 5000, 
+      series: [{
+        type: 'bar',
+        data: yData,
+        name: `${aggregation} of ${yColumn}`,
+        itemStyle: { 
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#FFD479' }, // Light Yellow (Top)
+            { offset: 0.5, color: '#FF8C42' }, // Orange (Middle)
+            
+          ])
+        }
+      }]
     };
 
     chartInstance.setOption(options);
   }
 
-  // Re-render chart when inputs change
+  function resizeChart() {
+    if (chartInstance) {
+      chartInstance.resize();
+    }
+  }
+
   afterUpdate(() => {
-    renderChart();
+    if (!zooming) {
+      setTimeout(() => {
+        renderChart();
+      }, 1);
+    }
   });
 
   onMount(() => {
     renderChart();
+    window.addEventListener('resize', resizeChart); // Listen for window resize
   });
 
   onDestroy(() => {
@@ -63,7 +122,9 @@
       chartInstance.dispose();
       chartInstance = null;
     }
+    window.removeEventListener('resize', resizeChart);
   });
 </script>
 
-<div bind:this={chartElement} class="w-full h-96 border border-gray-300"></div>
+<!--  Make the chart container responsive -->
+<div bind:this={chartElement} class="w-full h-[400px] sm:h-[500px] md:h-[600px] border border-gray-300"></div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Pagination from './Pagination.svelte';
+  import Filter from './Filter.svelte';
   import { createEventDispatcher } from 'svelte';
 
   export let headers: string[] = [];
@@ -12,25 +13,23 @@
   let sortOrder: 'asc' | 'desc' | null = null;
   let currentPage = 1;
   let rowsPerPage = 1000;
-  let selectedFilterColumn: string = headers[0] || '';
+  let totalPages = 1;
+  let showDropdown = false; // Dropdown visibility state
+
+  // Filtering state
+  let filterColumn: string = headers[0] || '';
   let filterValue: string = '';
-  let selectedRows = new Set<number>();
 
-  // Reactive declarations
-  $: filteredRows = rows.filter((row) => {
-    if (!selectedFilterColumn || !filterValue) return true;
-    const cellValue = row[selectedFilterColumn]?.toString().toLowerCase();
-    return cellValue.includes(filterValue.toLowerCase());
-  });
+  // Column Visibility State
+  let selectedColumns = new Set(headers); // Default: Show all columns
 
-  $: totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+  // Handle filter changes
+  function handleFilterChange(event: CustomEvent) {
+    filterColumn = event.detail.column;
+    filterValue = event.detail.value;
+  }
 
-  $: paginatedRows = filteredRows.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
-
-  // Function to handle table sorting
+  // Sorting function
   function sortTable(column: string) {
     if (sortColumn === column) {
       sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
@@ -38,110 +37,122 @@
       sortColumn = column;
       sortOrder = 'asc';
     }
-
-    rows = [...rows].sort((a, b) => {
-      const valueA = a[column];
-      const valueB = b[column];
-
-      if (valueA < valueB) {
-        return sortOrder === 'asc' ? -1 : 1;
-      } else if (valueA > valueB) {
-        return sortOrder === 'asc' ? 1 : -1;
-      } else {
-        return 0;
-      }
-    });
-
-    currentPage = 1;
   }
 
-  // Function to handle pagination
+  // Toggle column visibility with smooth animation
+  function toggleColumn(header: string) {
+    const columnElements = document.querySelectorAll(`.${header.replace(/\s+/g, '-')}`);
+
+    columnElements.forEach((col: HTMLElement) => {
+      col.style.transition = "opacity 0.3s ease, width 0.3s ease";
+      col.style.opacity = "0";
+      col.style.width = "0";
+    });
+
+    setTimeout(() => {
+      if (selectedColumns.has(header)) {
+        selectedColumns.delete(header);
+      } else {
+        selectedColumns.add(header);
+      }
+      selectedColumns = new Set(selectedColumns); // Force reactivity update
+
+      columnElements.forEach((col: HTMLElement) => {
+        col.style.opacity = "1";
+        col.style.width = "auto";
+      });
+    }, 300);
+  }
+
+  // Reactive filtered rows
+  $: filteredRows = rows.filter((row) => {
+    if (!filterColumn || !filterValue) return true;
+    const cellValue = row[filterColumn]?.toString().toLowerCase();
+    return cellValue.includes(filterValue.toLowerCase());
+  });
+
+  // Reactive sorted rows
+  $: sortedRows = [...filteredRows].sort((a, b) => {
+    if (!sortColumn) return 0;
+    let valA = a[sortColumn];
+    let valB = b[sortColumn];
+
+    if (typeof valA === 'string') valA = valA.toLowerCase();
+    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+    return sortOrder === 'asc' ? (valA < valB ? -1 : 1) : (valA > valB ? -1 : 1);
+  });
+
+  // Pagination logic
+  $: totalPages = sortedRows.length > 0 ? Math.ceil(sortedRows.length / rowsPerPage) : 1;
+  $: paginatedRows = sortedRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
   function handlePageChange(page: number) {
     currentPage = page;
   }
 
-  // Function to handle row selection
-  function toggleRowSelection(index: number) {
-    if (selectedRows.has(index)) {
-      selectedRows.delete(index);
-    } else {
-      selectedRows.add(index);
-    }
-
-    dispatch(
-      'selectionChange',
-      Array.from(selectedRows).map((i) => filteredRows[i])
-    );
+  function updateRowsPerPage(value: string) {
+    rowsPerPage = value === 'full' ? sortedRows.length : parseInt(value);
+    currentPage = 1;
   }
 </script>
 
-<div class="table-container">
-  <!-- Filter Section -->
-  <div class="flex items-center space-x-4 mb-4">
-    <div>
-      <label for="filterColumn" class="label">Filter by:</label>
-      <select id="filterColumn" class="dropdown" bind:value={selectedFilterColumn}>
-        {#each headers as header}
-          <option value={header}>{header}</option>
-        {/each}
-      </select>
-    </div>
-    <div>
-      <label for="filterValue" class="label">Value:</label>
-      <input
-        id="filterValue"
-        type="text"
-        placeholder="Enter filter value"
-        class="input"
-        bind:value={filterValue}
-      />
-    </div>
-  </div>
+<!-- Column Visibility Dropdown -->
+<div class="relative mb-4">
+  <button on:click={() => showDropdown = !showDropdown} class="styled-toggle-btn">
+    Select Columns ▼
+  </button>
 
-  <!-- Table Section -->
+  {#if showDropdown}
+    <div class="checklist-dropdown">
+      {#each headers as header}
+        <label class="checklist-item">
+          <input type="checkbox" class="hidden-checkbox" checked={selectedColumns.has(header)} on:change={() => toggleColumn(header)} />
+          <span class="checklist-label">{header}</span>
+        </label>
+      {/each}
+    </div>
+  {/if}
+</div>
+
+<!-- Filter Component -->
+<Filter {headers} on:filterChange={handleFilterChange} />
+
+<!-- Table Section -->
+<div class="table-container">
   <table class="table">
     <thead>
       <tr>
-        <th>Select</th>
         {#each headers as header}
-          <th on:click={() => sortTable(header)}>
-            {header}
-            {#if sortColumn === header}
-              <span>{sortOrder === 'asc' ? '▲' : '▼'}</span>
-            {/if}
-          </th>
+          {#if selectedColumns.has(header)}
+            <th on:click={() => sortTable(header)} class="cursor-pointer {header.replace(/\s+/g, '-')}">
+              {header}
+              {#if sortColumn === header}
+                {sortOrder === 'asc' ? ' ▲' : ' ▼'}
+              {/if}
+            </th>
+          {/if}
         {/each}
       </tr>
     </thead>
     <tbody>
-      {#each paginatedRows as row, index}
+      {#each paginatedRows as row}
         <tr>
-          <td>
-            <input
-              type="checkbox"
-              on:change={() => toggleRowSelection((currentPage - 1) * rowsPerPage + index)}
-            />
-          </td>
           {#each headers as header}
-            <td>{row[header]}</td>
+            {#if selectedColumns.has(header)}
+              <td class="{header.replace(/\s+/g, '-')}">{row[header]}</td>
+            {/if}
           {/each}
         </tr>
       {/each}
     </tbody>
   </table>
 
-  <!-- Pagination Section -->
+  <!-- Pagination & Rows Per Page -->
   <div class="pagination-container mt-4">
     <div class="rows-per-page-container">
       <span>Rows per page:</span>
-      <select
-        class="rows-per-page-select"
-        on:change={(e) => {
-          const value = e.target.value;
-          rowsPerPage = value === 'full' ? filteredRows.length : parseInt(value);
-          currentPage = 1;
-        }}
-      >
+      <select class="rows-per-page-select" on:change={(e) => updateRowsPerPage(e.target.value)}>
         <option value="1000" selected>1000</option>
         <option value="2000">2000</option>
         <option value="full">Full</option>
