@@ -6,7 +6,7 @@ This project is a **Svelte-powered dynamic data visualization tool** that allows
 
 -  **CSV Upload & Parsing**: Users can upload CSV files, which are parsed dynamically.
 -  **Data Table with Sorting & Filtering**: The table supports sorting, filtering, column selection, and pagination.
--  **Interactive Bar Chart**: The data is visualized using an interactive bar chart with zooming and aggregation options.
+-  **Interactive Bar Chart**: The data is visualized using an interactive bar chart with zooming and aggregation options (sum, average, count, distinct).
 -  **Cross-Filtering**: Select data from the table to update the chart, and vice versa.
 -  **Optimized Sorting with Web Workers**: Large datasets are sorted efficiently using a Web Worker to prevent UI blocking.
 -  **Responsive UI**: Works on different screen sizes using **Tailwind CSS**.
@@ -24,28 +24,10 @@ This project is a **Svelte-powered dynamic data visualization tool** that allows
    ```sh
    npm install
    
-3. **Install Dependencies**
+3. **Run the Development Server**
    ```sh
    npm install
 
 4. **Open the App**
    ```sh
    Visit http://localhost:5173 in your browser.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
