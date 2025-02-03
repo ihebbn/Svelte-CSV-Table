@@ -29,6 +29,7 @@ This project is a **Svelte-powered dynamic data visualization tool** that allows
    npm install
 
 4. **Open the App**
+   ```sh
    Visit http://localhost:5173 in your browser.
 
 
