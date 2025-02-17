@@ -1,4 +1,3 @@
-/// <reference lib="WebWorker" />
 
 self.onmessage = (event) => {
     const { rows, column, order } = event.data;

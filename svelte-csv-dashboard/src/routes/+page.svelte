@@ -63,12 +63,12 @@
     <input class="file" name="text" type="file" accept=".csv" on:change={handleFileUpload} />
   </label>
 
-  <!-- ✅ Loading Indicator -->
+  <!-- Loading Indicator -->
   {#if isLoading}
     <div class="loading">Processing CSV...</div>
   {/if}
 
-  <!-- ✅ Render Dashboard -->
+  <!-- Render Dashboard -->
   {#if headers.length > 0 && rows.length > 0}
     <Dashboard {headers} {rows} />
   {:else}

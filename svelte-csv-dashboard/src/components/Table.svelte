@@ -155,6 +155,7 @@
       <select class="rows-per-page-select" on:change={(e) => updateRowsPerPage(e.target.value)}>
         <option value="1000" selected>1000</option>
         <option value="2000">2000</option>
+        <option value="5000">5000</option>
         <option value="full">Full</option>
       </select>
     </div>

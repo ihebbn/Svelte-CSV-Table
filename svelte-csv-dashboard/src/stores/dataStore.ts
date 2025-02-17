@@ -1,3 +1,4 @@
+// stores/tableStore.ts
 import { writable, derived } from 'svelte/store';
 
 interface SortConfig {
@@ -17,7 +18,6 @@ interface PaginationConfig {
   showDropdown: boolean;
 }
 
-// Initialize stores
 export const headers = writable<string[]>([]);
 export const rawData = writable<Record<string, any>[]>([]);
 export const sortConfig = writable<SortConfig>({ column: null, order: null });
@@ -30,7 +30,6 @@ export const pagination = writable<PaginationConfig>({
   showDropdown: false
 });
 
-// Derived stores
 export const filteredRows = derived(
   [rawData, filterConfig],
   ([$rawData, $filterConfig]) => 
