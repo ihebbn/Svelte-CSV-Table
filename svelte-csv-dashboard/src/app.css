@@ -95,12 +95,64 @@
   .table tbody tr:hover {
     background-color: #f3f4f6;
   }
+
+  /* Filter Section Styles */
+/* ============================= */
+
+.filter-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filter-group {
+  flex: 1 1 30px; /* Responsive behavior */
+}
+
+.filter-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.filter-select,
+.filter-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+  .filter-container {
+    flex-direction: column;
+  }
+}
+
+/* ============================= */
+/* Pagination Section Styles */
+/* ============================= */
+
+.rows-per-page-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rows-per-page-select {
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
   
   /* Pagination styles */
 .pagination-container {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-top: 16px;
     gap: 1rem;
     font-family: Arial, sans-serif;
   }
@@ -186,4 +238,224 @@
         font-size: 0.75rem; /* Reduce font size for smaller screens */
         padding: 0.5rem;
     }
+}
+
+/* 🌟 Background & Layout */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa, rgb(226, 215, 195));
+  padding: 20px;
+}
+
+/* 🌟 Logo */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.company-logo {
+  max-width: 120px;
+  height: auto;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 🌟 Title */
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* 🌟 Upload Button */
+.container-btn-file {
+  display: flex;
+  position: relative;
+  justify-content: center;
+  align-items: center;
+  background-color: #307750;
+  color: #fff;
+  border-style: none;
+  padding: 1em 2em;
+  border-radius: 0.5em;
+  overflow: hidden;
+  z-index: 1;
+  box-shadow: 4px 8px 10px -3px rgba(0, 0, 0, 0.3);
+  transition: all 250ms;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.container-btn-file input[type="file"] {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.container-btn-file > svg {
+  margin-right: 1em;
+}
+
+.container-btn-file::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 0;
+  border-radius: 0.5em;
+  background-color: #469b61;
+  z-index: -1;
+  transition: all 350ms;
+}
+
+.container-btn-file:hover::before {
+  width: 100%;
+}
+
+/* 🌟 Loading Animation */
+.loading {
+  margin-top: 15px;
+  font-size: 16px;
+  color: #007bff;
+  font-weight: bold;
+  animation: fadeIn 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 🌟 Info Text */
+.info-text {
+  margin-top: 10px;
+  color: #666;
+  font-size: 14px;
+}
+
+
+
+/* Styled Toggle Button */
+.styled-toggle-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: none;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.styled-toggle-btn:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Checklist Dropdown */
+.checklist-dropdown {
+  --background: #fff;
+  --text: #414856;
+  --check: #f76e1fd7;
+  --disabled: #c3c8de;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--background);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(65, 72, 86, 0.05);
+  z-index: 10;
+  margin-top: 8px;
+  min-width: 200px;
+}
+
+.checklist-item {
+  position: relative;
+  margin: 12px 0;
+}
+
+.hidden-checkbox {
+  position: absolute;
+  opacity: 0;
+  height: 0;
+  width: 0;
+}
+
+.checklist-label {
+  color: var(--text);
+  position: relative;
+  cursor: pointer;
+  padding-left: 30px;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.checklist-label::before,
+.checklist-label::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  transition: all 0.3s ease;
+}
+
+.checklist-label::before {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--check);
+  border-radius: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.checklist-label::after {
+  content: "✓";
+  color: white;
+  left: 4px;
+  top: 47%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  font-weight: bold;
+  opacity: 0;
+}
+
+.hidden-checkbox:checked + .checklist-label::before {
+  background: var(--check);
+  border-color: var(--check);
+  animation: checkScale 0.2s ease;
+}
+
+.hidden-checkbox:checked + .checklist-label::after {
+  opacity: 1;
+  animation: checkPop 0.3s ease;
+}
+
+.hidden-checkbox:checked + .checklist-label {
+  color: var(--disabled);
+  text-decoration: line-through;
+}
+
+@keyframes checkScale {
+  0% { transform: translateY(-50%) scale(0.8); }
+  50% { transform: translateY(-50%) scale(1.1); }
+  100% { transform: translateY(-50%) scale(1); }
+}
+
+@keyframes checkPop {
+  0% { transform: translateY(-50%) scale(0); }
+  80% { transform: translateY(-50%) scale(1.2); }
+  100% { transform: translateY(-50%) scale(1); }
 }
